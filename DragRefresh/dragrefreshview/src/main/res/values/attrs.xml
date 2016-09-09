@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="refresh_DragRefreshLayout">
+        <attr name="refresh_empty" format="reference" />
+        <attr name="refresh_content" format="reference" />
+    </declare-styleable>
+</resources>
