@@ -67,7 +67,10 @@ public class RingDrawable extends Drawable implements Drawable.Callback, Animata
     private static final int MAX_ALPHA = 255;
 
     private final int[] COLORS = new int[]{
-            Color.BLACK
+            Color.rgb(0xC9, 0x34, 0x37),
+            Color.rgb(0x37, 0x5B, 0xF1),
+            Color.rgb(0xF7, 0xD2, 0x3E),
+            Color.rgb(0x34, 0xA3, 0x50)
     };
 
     /**

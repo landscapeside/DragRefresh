@@ -25,12 +25,14 @@ public class DragRefreshLayout extends FrameLayout {
     View mTarget = null, emptyView = null;
     ImageView refreshView, loadView;
     private int emptyId = 0, contentId = 0;
+    private RingDrawable mRefreshDrawable, mLoadDrawable;
 
     private static final int DRAG_MAX_DISTANCE = 64;
     static final int DRAG_MAX_RANGE = 150;
     int contentTop = 0;
     int initY = 0, mActivePointerId = -1;
     ScrollStatus status = ScrollStatus.IDLE;
+    Direction direction = Direction.STATIC;
 
     public DragRefreshLayout(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -60,7 +62,7 @@ public class DragRefreshLayout extends FrameLayout {
                 if (mActivePointerId == -1) {
                     return false;
                 }
-                Direction direction = Direction.getDirection(
+                direction = Direction.getDirection(
                         (int) (MotionEventUtil.getMotionEventY(event, mActivePointerId) - initY));
                 if (direction == Direction.DOWN) {
                     if (!ScrollStatus.isDragging(status) && !ScrollStatus.isRefreshing(status) && ScrollViewCompat.canScrollDown(mTarget)) {
@@ -68,7 +70,7 @@ public class DragRefreshLayout extends FrameLayout {
                     } else {
                         return handleMotionEvent(event);
                     }
-                } else if(direction == Direction.UP) {
+                } else if (direction == Direction.UP) {
                     if (!ScrollStatus.isDragging(status) && !ScrollStatus.isLoading(status) && ScrollViewCompat.canScrollUp(mTarget)) {
                         return super.dispatchTouchEvent(event);
                     } else {
@@ -129,8 +131,16 @@ public class DragRefreshLayout extends FrameLayout {
         loadView = new ImageView(getContext());
         refreshView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp2px(DRAG_MAX_DISTANCE)));
         loadView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp2px(DRAG_MAX_DISTANCE)));
+        initDrawable();
+        refreshView.setImageDrawable(mRefreshDrawable);
+        loadView.setImageDrawable(mLoadDrawable);
         addView(refreshView, 0);
         addView(loadView);
+    }
+
+    private void initDrawable() {
+        mRefreshDrawable = new RingDrawable(this);
+        mLoadDrawable = new RingDrawable(this);
     }
 
     private void ensureTarget() {
@@ -193,9 +203,6 @@ public class DragRefreshLayout extends FrameLayout {
         @Override
         public boolean tryCaptureView(View child, int pointerId) {
             if (child == mTarget) {
-                if (ScrollViewCompat.canScrollDown(mTarget) && ScrollViewCompat.canScrollUp(mTarget)) {
-                    return false;
-                }
                 return true;
             }
             return false;
@@ -203,10 +210,8 @@ public class DragRefreshLayout extends FrameLayout {
 
         @Override
         public int clampViewPositionVertical(View child, int top, int dy) {
-
-            if (contentTop + dy < 0) {
-                return 0;
-            } else if (contentTop + dy > DRAG_MAX_RANGE) {
+            status = ScrollStatus.DRAGGING;
+            if (Math.abs(contentTop + dy) > DRAG_MAX_RANGE) {
                 return DRAG_MAX_RANGE;
             } else {
                 return top;
@@ -234,7 +239,14 @@ public class DragRefreshLayout extends FrameLayout {
 
         @Override
         public void onViewPositionChanged(View changedView, int left, int top, int dx, int dy) {
-            super.onViewPositionChanged(changedView, left, top, dx, dy);
+            if (changedView == mTarget) {
+                refreshView.offsetTopAndBottom(dy);
+                loadView.offsetTopAndBottom(dy);
+                contentTop = top;
+                if (contentTop == 0) {
+                    status = ScrollStatus.IDLE;
+                }
+            }
         }
     };
 
@@ -246,6 +258,17 @@ public class DragRefreshLayout extends FrameLayout {
     public void computeScroll() {
         if (dragHelper.continueSettling(true)) {
             ViewCompat.postInvalidateOnAnimation(this);
+            mRefreshDrawable.invalidateSelf();
+            mLoadDrawable.invalidateSelf();
+        } else {
+            if (status == ScrollStatus.REFRESHING) {
+                mRefreshDrawable.start();
+            } else if (status == ScrollStatus.LOADING) {
+                mLoadDrawable.start();
+            } else if (status == ScrollStatus.IDLE) {
+                mRefreshDrawable.stop();
+                mLoadDrawable.stop();
+            }
         }
     }
 
