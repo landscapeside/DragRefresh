@@ -5,8 +5,6 @@
       <module fileurl="file://$PROJECT_DIR$/DragRefresh.iml" filepath="$PROJECT_DIR$/DragRefresh.iml" />
       <module fileurl="file://$PROJECT_DIR$/DragRefreshLayout.iml" filepath="$PROJECT_DIR$/DragRefreshLayout.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/dragrefreshview/dragrefreshview.iml" filepath="$PROJECT_DIR$/dragrefreshview/dragrefreshview.iml" />
       <module fileurl="file://$PROJECT_DIR$/dragrefreshview/dragrefreshview.iml" filepath="$PROJECT_DIR$/dragrefreshview/dragrefreshview.iml" />
     </modules>
   </component>
