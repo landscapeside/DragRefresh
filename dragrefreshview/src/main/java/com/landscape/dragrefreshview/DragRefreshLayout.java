@@ -3,44 +3,40 @@ package com.landscape.dragrefreshview;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Color;
-import android.support.v4.view.GestureDetectorCompat;
-import android.support.v4.view.MotionEventCompat;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.widget.ViewDragHelper;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.TypedValue;
-import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import static com.landscape.dragrefreshview.Range.DRAG_MAX_DISTANCE;
+import static com.landscape.dragrefreshview.Range.DRAG_MAX_RANGE;
+import static com.landscape.dragrefreshview.Range.DRAW_PADDING;
 
 /**
  * Created by 1 on 2016/9/7.
  */
-public class DragRefreshLayout extends FrameLayout {
+public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragActionBridge {
     ViewDragHelper dragHelper;
-    private GestureDetectorCompat gestureDetector;
-
     View mTarget = null, emptyView = null;
     ImageView refreshView, loadView;
     private int emptyId = 0, contentId = 0;
     private RingDrawable mRefreshDrawable, mLoadDrawable;
 
-    private static final int DRAG_MAX_DISTANCE = 64;
-    static final int DRAG_MAX_RANGE = 150;
+
     int contentTop = 0;
-    int initY = 0, mActivePointerId = -1;
-    ScrollStatus status = ScrollStatus.IDLE;
-    Direction direction = Direction.STATIC;
-    Direction dragDirection = Direction.STATIC;
+    ScrollStatus status = ScrollStatus.IDLE, tempStatus = ScrollStatus.IDLE;
+    DragDelegate dragDelegate = null;
 
     public DragRefreshLayout(Context context, AttributeSet attrs) {
         super(context, attrs);
-        gestureDetector = new GestureDetectorCompat(context, new XScrollDetector());
         dragHelper = ViewDragHelper.create(this, 0.3f, dragHelperCallback);
+        dragDelegate = new DragDelegate(this);
+
         if (attrs == null) {
             return;
         }
@@ -52,134 +48,56 @@ public class DragRefreshLayout extends FrameLayout {
 
     @Override
     public boolean onInterceptTouchEvent(MotionEvent event) {
-        if (mTarget == null) {
-            return false;
-        }
-        final int action = MotionEventCompat.getActionMasked(event);
-        switch (action) {
-            case MotionEvent.ACTION_DOWN:
-                mActivePointerId = MotionEventCompat.getPointerId(event, 0);
-                initY = (int) MotionEventUtil.getMotionEventY(event, mActivePointerId);
-                dragHelper.shouldInterceptTouchEvent(event);
-                break;
-            case MotionEvent.ACTION_MOVE:
-                if (mActivePointerId == -1) {
-                    return false;
-                }
-                direction = Direction.getDirection(
-                        (int) (MotionEventUtil.getMotionEventY(event, mActivePointerId) - initY));
-                if (direction == Direction.DOWN) {
-                    if (!ScrollStatus.isDragging(status) && !ScrollStatus.isRefreshing(status) && ScrollViewCompat.canScrollDown(mTarget)) {
-                        if (ScrollStatus.isLoading(status)) {
-                            return handleMotionEvent(event);
-                        } else {
-                            return false;
-                        }
-                    } else {
-                        return handleMotionEvent(event);
-                    }
-                } else if (direction == Direction.UP) {
-                    if (!ScrollStatus.isDragging(status) && !ScrollStatus.isLoading(status) && ScrollViewCompat.canScrollUp(mTarget)) {
-                        if (ScrollStatus.isRefreshing(status)) {
-                            return handleMotionEvent(event);
-                        } else {
-                            return false;
-                        }
-                    } else {
-                        return handleMotionEvent(event);
-                    }
-                }
-                break;
-            case MotionEvent.ACTION_CANCEL:
-                mActivePointerId = -1;
-                dragDirection = Direction.STATIC;
-                return false;
-            case MotionEvent.ACTION_UP:
-                mActivePointerId = -1;
-                dragDirection = Direction.STATIC;
-                if (ScrollStatus.isDragging(status)) {
-                    return handleMotionEvent(event);
-                } else {
-                    return false;
-                }
-
-        }
-        return ScrollStatus.isDragging(status);
+        return dragDelegate.onInterceptTouchEvent(event);
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        final int action = MotionEventCompat.getActionMasked(event);
-        switch (action) {
-            case MotionEvent.ACTION_MOVE:
-                if (mActivePointerId == -1) {
-                    return true;
-                }
-                direction = Direction.getDirection(
-                        (int) (MotionEventUtil.getMotionEventY(event, mActivePointerId) - initY));
-                if (dragDirection == Direction.STATIC) {
-                    dragDirection = direction;
-                }
-                if (direction == Direction.DOWN) {
-                    if (dragDirection != direction) {
-                        if (contentTop < 0) {
-//                                Log.i("dragLayout", "继续处理");
-                            dragHelper.processTouchEvent(event);
-                            break;
-                        } else {
-//                                Log.i("dragLayout", "防止折回");
-                            setLoading(false);
-                            event.setAction(MotionEvent.ACTION_CANCEL);
-                            super.dispatchTouchEvent(event);
-                            return true;
-                        }
-                    } else {
-//                            Log.i("dragLayout", "DOWN同方向");
-                        dragHelper.processTouchEvent(event);
-                        break;
-                    }
-                } else if (direction == Direction.UP) {
-                    if (dragDirection != direction) {
-                        if (contentTop > 0) {
-//                                Log.i("dragLayout", "继续处理");
-                            dragHelper.processTouchEvent(event);
-                            break;
-                        } else {
-//                                Log.i("dragLayout", "防止折回");
-                            setRefreshing(false);
-                            event.setAction(MotionEvent.ACTION_CANCEL);
-                            super.dispatchTouchEvent(event);
-                            return true;
-                        }
-                    } else {
-//                            Log.i("dragLayout", "UP同方向");
-                        dragHelper.processTouchEvent(event);
-                        break;
-                    }
-                }
-                break;
-            default:
-                dragHelper.processTouchEvent(event);
-                break;
-        }
-        initY = (int) MotionEventUtil.getMotionEventY(event, mActivePointerId);
-        return true;
+        return dragDelegate.onTouchEvent(event);
     }
 
-    private boolean handleMotionEvent(MotionEvent event) {
-        if (!ScrollStatus.isDragging(status)) {
-            MotionEvent cancelEvent = MotionEvent.obtain(event);
-            cancelEvent.setAction(MotionEvent.ACTION_CANCEL);
-            mTarget.dispatchTouchEvent(cancelEvent);
-        }
-        return dragHelper.shouldInterceptTouchEvent(event) && gestureDetector.onTouchEvent(event);
+    @Override
+    public ScrollStatus scrollStatus() {
+        return status;
     }
 
-    class XScrollDetector extends GestureDetector.SimpleOnGestureListener {
-        @Override
-        public boolean onScroll(MotionEvent e1, MotionEvent e2, float dx, float dy) {
-            return Math.abs(dx) <= Math.abs(dy);
+    @Override
+    public int contentTop() {
+        return contentTop;
+    }
+
+    @Override
+    public ViewDragHelper dragHelper() {
+        return dragHelper;
+    }
+
+    @Override
+    public View target() {
+        if (mTarget.isShown()) {
+            return mTarget;
         }
+        if (emptyView != null && emptyView.isShown()) {
+            return emptyView;
+        }
+        return mTarget;
+    }
+
+    @Override
+    public void resetRefresh() {
+        setRefreshing(false,false);
+    }
+
+    @Override
+    public void resetLoading() {
+        setLoading(false,false);
+    }
+
+    @Override
+    public void setDrawPercent(float drawPercent) {
+        mRefreshDrawable.setPercent(drawPercent);
+        mLoadDrawable.setPercent(drawPercent);
+        mRefreshDrawable.invalidateSelf();
+        mLoadDrawable.invalidateSelf();
     }
 
     @Override
@@ -194,6 +112,9 @@ public class DragRefreshLayout extends FrameLayout {
         loadView = new ImageView(getContext());
         refreshView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp2px(DRAG_MAX_DISTANCE)));
         loadView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp2px(DRAG_MAX_DISTANCE)));
+        refreshView.setPadding(0,dp2px(DRAW_PADDING),0,dp2px(DRAW_PADDING));
+        loadView.setPadding(0,dp2px(DRAW_PADDING),0,dp2px(DRAW_PADDING));
+
         initDrawable();
         refreshView.setImageDrawable(mRefreshDrawable);
         loadView.setImageDrawable(mLoadDrawable);
@@ -250,7 +171,7 @@ public class DragRefreshLayout extends FrameLayout {
             mTarget.layout(paddingLeft, paddingTop + contentTop, width - paddingRight, contentTop + height - paddingBottom);
         }
         if (emptyView != null) {
-            emptyView.layout(paddingLeft, paddingTop + contentTop, width - paddingRight, contentTop + height - paddingBottom);
+            emptyView.layout(paddingLeft, paddingTop , width - paddingRight, height - paddingBottom);
         }
         refreshView.layout(
                 paddingLeft,
@@ -268,9 +189,6 @@ public class DragRefreshLayout extends FrameLayout {
 
         @Override
         public boolean tryCaptureView(View child, int pointerId) {
-            if (child == mTarget) {
-                return true;
-            }
             return true;
         }
 
@@ -294,10 +212,12 @@ public class DragRefreshLayout extends FrameLayout {
         @Override
         public void onViewReleased(View releasedChild, float xvel, float yvel) {
             super.onViewReleased(releasedChild, xvel, yvel);
-            if (contentTop > DRAG_MAX_DISTANCE) {
+            if (contentTop > dp2px(DRAG_MAX_DISTANCE)) {
                 setRefreshing(true);
-            } else if (contentTop < -DRAG_MAX_DISTANCE) {
+                setDrawPercent(1f);
+            } else if (contentTop < -dp2px(DRAG_MAX_DISTANCE)) {
                 setLoading(true);
+                setDrawPercent(1f);
             } else if (contentTop > 0) {
                 setRefreshing(false);
             } else {
@@ -308,13 +228,30 @@ public class DragRefreshLayout extends FrameLayout {
         @Override
         public void onViewPositionChanged(View changedView, int left, int top, int dx, int dy) {
             if (changedView == mTarget) {
+                Log.i("dragRefresh", "top:" + top);
+                if (!ScrollViewCompat.canScrollDown(mTarget)
+                        && top < 0) {
+//                    setRefreshing(false,false);
+                    contentTop = 0;
+                    layoutViews();
+                } else if (ScrollViewCompat.canScrollDown(mTarget)
+                        && !ScrollViewCompat.canScrollUp(mTarget)
+                        && top > 0) {
+//                    setLoading(false,false);
+                    contentTop = 0;
+                    layoutViews();
+                } else {
+                    refreshView.offsetTopAndBottom(dy);
+                    loadView.offsetTopAndBottom(dy);
+                    contentTop = top;
+                    invalidate();
+                }
+            } else if (changedView == emptyView) {
+//                Log.i("dragRefresh", "top:" + top);
                 refreshView.offsetTopAndBottom(dy);
                 loadView.offsetTopAndBottom(dy);
                 contentTop = top;
                 invalidate();
-                if (contentTop == 0) {
-                    status = ScrollStatus.IDLE;
-                }
             }
         }
     };
@@ -323,21 +260,26 @@ public class DragRefreshLayout extends FrameLayout {
         return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, getContext().getResources().getDisplayMetrics());
     }
 
+    boolean lastAnimState = true,animContinue = true;
+
     @Override
     public void computeScroll() {
-        if (dragHelper.continueSettling(true)) {
+        animContinue = dragHelper.continueSettling(true);
+        if (animContinue && lastAnimState == animContinue) {
             ViewCompat.postInvalidateOnAnimation(this);
             mRefreshDrawable.invalidateSelf();
             mLoadDrawable.invalidateSelf();
-        } else {
-            if (ScrollStatus.isRefreshing(status)) {
+        } else if (lastAnimState != animContinue){
+            if (ScrollStatus.isRefreshing(tempStatus)) {
                 mRefreshDrawable.start();
-            } else if (ScrollStatus.isLoading(status)) {
+            } else if (ScrollStatus.isLoading(tempStatus)) {
                 mLoadDrawable.start();
-            } else if (ScrollStatus.isIdle(status)) {
+            } else if (ScrollStatus.isIdle(tempStatus)) {
                 mRefreshDrawable.stop();
                 mLoadDrawable.stop();
             }
+            status = tempStatus;
+            lastAnimState = animContinue;
         }
     }
 
@@ -346,25 +288,37 @@ public class DragRefreshLayout extends FrameLayout {
     }
 
     public void setRefreshing(boolean refreshing, boolean animation) {
-        status = ScrollStatus.REFRESHING;
         if (animation) {
             if (refreshing) {
-                if (dragHelper.smoothSlideViewTo(mTarget, 0, DRAG_MAX_DISTANCE)) {
+                lastAnimState = true;
+                if (dragHelper.smoothSlideViewTo(mTarget, 0, dp2px(DRAG_MAX_DISTANCE))) {
                     ViewCompat.postInvalidateOnAnimation(this);
                 }
             } else {
+                lastAnimState = true;
                 if (dragHelper.smoothSlideViewTo(mTarget, 0, 0)) {
                     ViewCompat.postInvalidateOnAnimation(this);
                 }
             }
+            if (refreshing) {
+                tempStatus = ScrollStatus.REFRESHING;
+            } else {
+                tempStatus = ScrollStatus.IDLE;
+            }
         } else {
             if (refreshing) {
-                contentTop = DRAG_MAX_DISTANCE;
+                contentTop = dp2px(DRAG_MAX_DISTANCE);
                 layoutViews();
             } else {
                 contentTop = 0;
                 layoutViews();
             }
+            if (refreshing) {
+                status = ScrollStatus.REFRESHING;
+            } else {
+                status = ScrollStatus.IDLE;
+            }
+            tempStatus = status;
         }
     }
 
@@ -373,25 +327,37 @@ public class DragRefreshLayout extends FrameLayout {
     }
 
     public void setLoading(boolean loading, boolean animation) {
-        status = ScrollStatus.LOADING;
         if (animation) {
             if (loading) {
-                if (dragHelper.smoothSlideViewTo(mTarget, 0, -DRAG_MAX_DISTANCE)) {
+                lastAnimState = true;
+                if (dragHelper.smoothSlideViewTo(mTarget, 0, -dp2px(DRAG_MAX_DISTANCE))) {
                     ViewCompat.postInvalidateOnAnimation(this);
                 }
             } else {
+                lastAnimState = true;
                 if (dragHelper.smoothSlideViewTo(mTarget, 0, 0)) {
                     ViewCompat.postInvalidateOnAnimation(this);
                 }
             }
+            if (loading) {
+                tempStatus = ScrollStatus.LOADING;
+            } else {
+                tempStatus = ScrollStatus.IDLE;
+            }
         } else {
             if (loading) {
-                contentTop = -DRAG_MAX_DISTANCE;
+                contentTop = -dp2px(DRAG_MAX_DISTANCE);
                 layoutViews();
             } else {
                 contentTop = 0;
                 layoutViews();
             }
+            if (loading) {
+                status = ScrollStatus.LOADING;
+            } else {
+                status = ScrollStatus.IDLE;
+            }
+            tempStatus = status;
         }
     }
 }

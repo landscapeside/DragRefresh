@@ -10,12 +10,21 @@
         android:id="@+id/drag_refresh"
         android:layout_width="match_parent"
         android:layout_height="200dp"
-        app:refresh_content="@+id/list_view">
+        app:refresh_content="@+id/list_view"
+        app:refresh_empty="@+id/empty_view">
+
+        <TextView
+            android:id="@+id/empty_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="empty!!"
+            android:visibility="gone"/>
 
         <ListView
             android:id="@+id/list_view"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:visibility="visible"/>
 
     </com.landscape.dragrefreshview.DragRefreshLayout>
 </RelativeLayout>
