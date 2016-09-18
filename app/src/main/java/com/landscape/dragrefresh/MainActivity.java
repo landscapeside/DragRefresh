@@ -40,7 +40,7 @@ public class MainActivity extends AppCompatActivity {
 
     private List<String> mockData() {
         List<String> data = new ArrayList<>();
-        for (int i = 0; i < 15; i++) {
+        for (int i = 0; i < 17; i++) {
             data.add("test" + i);
         }
         return data;

@@ -3,6 +3,8 @@ package com.landscape.dragrefreshview;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Color;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.widget.ViewDragHelper;
 import android.util.AttributeSet;
@@ -83,17 +85,15 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
     }
 
     @Override
-    public void resetRefresh() {
-        setRefreshing(false,false);
-    }
-
-    @Override
-    public void resetLoading() {
-        setLoading(false,false);
-    }
-
-    @Override
     public void setDrawPercent(float drawPercent) {
+        if (mRefreshDrawable.isRunning()) {
+            lastAnimState = false;
+            mRefreshDrawable.stop();
+        }
+        if (mLoadDrawable.isRunning()) {
+            lastAnimState = false;
+            mLoadDrawable.stop();
+        }
         mRefreshDrawable.setPercent(drawPercent);
         mLoadDrawable.setPercent(drawPercent);
         mRefreshDrawable.invalidateSelf();
@@ -214,10 +214,10 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
             super.onViewReleased(releasedChild, xvel, yvel);
             if (contentTop > dp2px(DRAG_MAX_DISTANCE)) {
                 setRefreshing(true);
-                setDrawPercent(1f);
+//                setDrawPercent(1f);
             } else if (contentTop < -dp2px(DRAG_MAX_DISTANCE)) {
                 setLoading(true);
-                setDrawPercent(1f);
+//                setDrawPercent(1f);
             } else if (contentTop > 0) {
                 setRefreshing(false);
             } else {
@@ -228,7 +228,6 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
         @Override
         public void onViewPositionChanged(View changedView, int left, int top, int dx, int dy) {
             if (changedView == mTarget) {
-                Log.i("dragRefresh", "top:" + top);
                 if (!ScrollViewCompat.canScrollDown(mTarget)
                         && top < 0) {
 //                    setRefreshing(false,false);
@@ -269,7 +268,7 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
             ViewCompat.postInvalidateOnAnimation(this);
             mRefreshDrawable.invalidateSelf();
             mLoadDrawable.invalidateSelf();
-        } else if (lastAnimState != animContinue){
+        } else if (!animContinue && lastAnimState != animContinue){
             if (ScrollStatus.isRefreshing(tempStatus)) {
                 mRefreshDrawable.start();
             } else if (ScrollStatus.isLoading(tempStatus)) {

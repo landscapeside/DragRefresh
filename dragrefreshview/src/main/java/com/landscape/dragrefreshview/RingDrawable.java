@@ -134,6 +134,7 @@ public class RingDrawable extends Drawable implements Drawable.Callback, Animata
     private ShapeDrawable mCircle;
     private int mDiameter;
 
+    boolean isRunning = false;
 
     public RingDrawable(ViewGroup mParent) {
         this.mParent = mParent;
@@ -161,28 +162,34 @@ public class RingDrawable extends Drawable implements Drawable.Callback, Animata
             mRing.resetOriginals();
             mParent.startAnimation(mAnimation);
         }
+        isRunning = true;
     }
 
     @Override
     public void stop() {
         mParent.clearAnimation();
+        mFinishAnimation.cancel();
+        mAnimation.cancel();
+        mFinishAnimation.reset();
+        mAnimation.reset();
         setRotation(0);
         mRing.setShowArrow(false);
         mRing.setColorIndex(0);
         mRing.resetOriginals();
+        isRunning = false;
     }
 
     @Override
     public boolean isRunning() {
-        final ArrayList<Animation> animators = mAnimators;
-        final int N = animators.size();
-        for (int i = 0; i < N; i++) {
-            final Animation animator = animators.get(i);
-            if (animator.hasStarted() && !animator.hasEnded()) {
-                return true;
-            }
-        }
-        return false;
+//        final ArrayList<Animation> animators = mAnimators;
+//        final int N = animators.size();
+//        for (int i = 0; i < N; i++) {
+//            final Animation animator = animators.get(i);
+//            if (animator.hasStarted() && !animator.hasEnded()) {
+//                return true;
+//            }
+//        }
+        return isRunning;
     }
 
     public Context getContext(){
@@ -325,6 +332,9 @@ public class RingDrawable extends Drawable implements Drawable.Callback, Animata
 
             @Override
             public void onAnimationStart(Animation animation) {
+                if (!isRunning()) {
+                    stop();
+                }
             }
 
             @Override
@@ -377,6 +387,9 @@ public class RingDrawable extends Drawable implements Drawable.Callback, Animata
 
             @Override
             public void onAnimationStart(Animation animation) {
+                if (!isRunning()) {
+                    stop();
+                }
                 mRotationCount = 0;
             }
 

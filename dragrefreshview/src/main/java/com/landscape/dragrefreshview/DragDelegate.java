@@ -92,45 +92,10 @@ public class DragDelegate {
                 if (mActivePointerId == -1) {
                     return true;
                 }
-                direction = Direction.getDirection(
-                        (int) (MotionEventUtil.getMotionEventY(event, mActivePointerId) - initY));
-                if (dragDirection == Direction.STATIC) {
-                    dragDirection = direction;
-                }
                 float originalDragPercent = (float) Math.abs(consignor.contentTop()) / (float)DRAG_MAX_RANGE + .4f;
                 mDragPercent = Math.min(1f, Math.abs(originalDragPercent));
                 consignor.setDrawPercent(mDragPercent);
-                if (direction == Direction.DOWN) {
-                    if (dragDirection != direction || ScrollStatus.isLoading(consignor.scrollStatus())) {
-                        Log.i("dragDelegate", "DOWN");
-                        if (consignor.contentTop() < 0) {
-                            consignor.dragHelper().processTouchEvent(event);
-                            break;
-                        } else {
-//                            consignor.resetLoading();
-//                            return true;
-                            break;
-                        }
-                    } else {
-                        consignor.dragHelper().processTouchEvent(event);
-                        break;
-                    }
-                } else if (direction == Direction.UP) {
-                    if (dragDirection != direction || ScrollStatus.isRefreshing(consignor.scrollStatus())) {
-                        Log.i("dragDelegate", "UP");
-                        if (consignor.contentTop() > 0) {
-                            consignor.dragHelper().processTouchEvent(event);
-                            break;
-                        } else {
-//                            consignor.resetRefresh();
-//                            return true;
-                            break;
-                        }
-                    } else {
-                        consignor.dragHelper().processTouchEvent(event);
-                        break;
-                    }
-                }
+                consignor.dragHelper().processTouchEvent(event);
                 break;
             case MotionEvent.ACTION_UP:
                 mActivePointerId = -1;
@@ -171,8 +136,6 @@ public class DragDelegate {
         int contentTop();
         ViewDragHelper dragHelper();
         View target();
-        void resetRefresh();
-        void resetLoading();
         void setDrawPercent(float drawPercent);
     }
 }
