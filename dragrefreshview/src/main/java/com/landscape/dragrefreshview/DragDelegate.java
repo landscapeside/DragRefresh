@@ -3,12 +3,11 @@ package com.landscape.dragrefreshview;
 import android.support.v4.view.GestureDetectorCompat;
 import android.support.v4.view.MotionEventCompat;
 import android.support.v4.widget.ViewDragHelper;
-import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import static com.landscape.dragrefreshview.Range.DRAG_MAX_DISTANCE;
+
 import static com.landscape.dragrefreshview.Range.DRAG_MAX_RANGE;
 
 /**
@@ -38,6 +37,7 @@ public class DragDelegate {
                 initY = (int) MotionEventUtil.getMotionEventY(event, mActivePointerId);
                 consignor.dragHelper().shouldInterceptTouchEvent(event);
                 mDragPercent = 0;
+                consignor.beforeMove();
                 break;
             case MotionEvent.ACTION_MOVE:
                 if (mActivePointerId == -1) {
@@ -46,26 +46,34 @@ public class DragDelegate {
                 direction = Direction.getDirection(
                         (int) (MotionEventUtil.getMotionEventY(event, mActivePointerId) - initY));
                 if (direction == Direction.DOWN) {
-                    if (!ScrollStatus.isDragging(consignor.scrollStatus()) && !ScrollStatus.isRefreshing(consignor.scrollStatus()) && ScrollViewCompat.canScrollDown(consignor.target())) {
-                        if (ScrollStatus.isLoading(consignor.scrollStatus())) {
-                            return handleMotionEvent(event);
+                    if (consignor.isRefreshAble() || ScrollStatus.isLoading(consignor.scrollStatus())) {
+                        if (!ScrollStatus.isDragging(consignor.scrollStatus()) && !ScrollStatus.isRefreshing(consignor.scrollStatus()) && ScrollViewCompat.canScrollDown(consignor.target())) {
+                            if (ScrollStatus.isLoading(consignor.scrollStatus())) {
+                                return handleMotionEvent(event);
+                            } else {
+                                return false;
+                            }
                         } else {
-                            return false;
+                            return handleMotionEvent(event);
                         }
                     } else {
-                        return handleMotionEvent(event);
+                        return false;
                     }
                 } else if (direction == Direction.UP) {
-                    if (!ScrollStatus.isDragging(consignor.scrollStatus()) && !ScrollStatus.isLoading(consignor.scrollStatus()) && ScrollViewCompat.canScrollUp(consignor.target())) {
-                        if (ScrollStatus.isRefreshing(consignor.scrollStatus())) {
-                            return handleMotionEvent(event);
+                    if (consignor.isLoadAble() || ScrollStatus.isRefreshing(consignor.scrollStatus())) {
+                        if (!ScrollStatus.isDragging(consignor.scrollStatus()) && !ScrollStatus.isLoading(consignor.scrollStatus()) && ScrollViewCompat.canScrollUp(consignor.target())) {
+                            if (ScrollStatus.isRefreshing(consignor.scrollStatus())) {
+                                return handleMotionEvent(event);
+                            } else {
+                                return false;
+                            }
                         } else {
-                            return false;
+                            if (ScrollViewCompat.canScrollDown(consignor.target()) || ScrollStatus.isRefreshing(consignor.scrollStatus())) {
+                                return handleMotionEvent(event);
+                            }
                         }
                     } else {
-                        if (ScrollViewCompat.canScrollDown(consignor.target()) || ScrollStatus.isRefreshing(consignor.scrollStatus())) {
-                            return handleMotionEvent(event);
-                        }
+                        return false;
                     }
                 }
                 break;
@@ -137,5 +145,8 @@ public class DragDelegate {
         ViewDragHelper dragHelper();
         View target();
         void setDrawPercent(float drawPercent);
+        boolean isRefreshAble();
+        boolean isLoadAble();
+        void beforeMove();
     }
 }

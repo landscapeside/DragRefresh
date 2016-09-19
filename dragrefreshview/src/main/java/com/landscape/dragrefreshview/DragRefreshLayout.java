@@ -3,8 +3,6 @@ package com.landscape.dragrefreshview;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Color;
-import android.os.Handler;
-import android.os.Message;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.widget.ViewDragHelper;
 import android.util.AttributeSet;
@@ -28,11 +26,13 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
     ImageView refreshView, loadView;
     private int emptyId = 0, contentId = 0;
     private RingDrawable mRefreshDrawable, mLoadDrawable;
-
-
-    int contentTop = 0;
-    ScrollStatus status = ScrollStatus.IDLE, tempStatus = ScrollStatus.IDLE;
+    int contentTop = 0,startTop = 0;
+    ScrollStatus status = ScrollStatus.IDLE, scrollStatus = ScrollStatus.IDLE;
     DragDelegate dragDelegate = null;
+    DragRefreshListener refreshListener = null;
+    DragLoadListener loadListener = null;
+    Direction smoothToDirection = Direction.STATIC;
+    boolean isMoving = false;
 
     public DragRefreshLayout(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -98,6 +98,31 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
         mLoadDrawable.setPercent(drawPercent);
         mRefreshDrawable.invalidateSelf();
         mLoadDrawable.invalidateSelf();
+    }
+
+    @Override
+    public boolean isRefreshAble() {
+        return refreshListener != null;
+    }
+
+    @Override
+    public boolean isLoadAble() {
+        return loadListener != null;
+    }
+
+    @Override
+    public void beforeMove() {
+        if (isMoving) {
+            return;
+        }
+        scrollStatus = status;
+        startTop = contentTop;
+        isMoving = true;
+        Log.i("dragRefresh", "startTop:" + startTop);
+    }
+
+    private void endMove() {
+        isMoving = false;
     }
 
     @Override
@@ -214,12 +239,17 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
             super.onViewReleased(releasedChild, xvel, yvel);
             if (contentTop > dp2px(DRAG_MAX_DISTANCE)) {
                 setRefreshing(true);
-//                setDrawPercent(1f);
             } else if (contentTop < -dp2px(DRAG_MAX_DISTANCE)) {
                 setLoading(true);
-//                setDrawPercent(1f);
             } else if (contentTop > 0) {
                 setRefreshing(false);
+            }else if(contentTop == 0){
+                endMove();
+                if (!ScrollViewCompat.canScrollDown(mTarget)) {
+                    setRefreshing(false);
+                } else if (!ScrollViewCompat.canScrollUp(mTarget)){
+                    setLoading(false);
+                }
             } else {
                 setLoading(false);
             }
@@ -230,13 +260,11 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
             if (changedView == mTarget) {
                 if (!ScrollViewCompat.canScrollDown(mTarget)
                         && top < 0) {
-//                    setRefreshing(false,false);
                     contentTop = 0;
                     layoutViews();
                 } else if (ScrollViewCompat.canScrollDown(mTarget)
                         && !ScrollViewCompat.canScrollUp(mTarget)
                         && top > 0) {
-//                    setLoading(false,false);
                     contentTop = 0;
                     layoutViews();
                 } else {
@@ -246,7 +274,6 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
                     invalidate();
                 }
             } else if (changedView == emptyView) {
-//                Log.i("dragRefresh", "top:" + top);
                 refreshView.offsetTopAndBottom(dy);
                 loadView.offsetTopAndBottom(dy);
                 contentTop = top;
@@ -269,16 +296,32 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
             mRefreshDrawable.invalidateSelf();
             mLoadDrawable.invalidateSelf();
         } else if (!animContinue && lastAnimState != animContinue){
-            if (ScrollStatus.isRefreshing(tempStatus)) {
+            if (ScrollStatus.isRefreshing(scrollStatus)) {
                 mRefreshDrawable.start();
-            } else if (ScrollStatus.isLoading(tempStatus)) {
+                if (isRefreshAble()) {
+                    refreshListener.onRefresh();
+                }
+            } else if (ScrollStatus.isLoading(scrollStatus)) {
                 mLoadDrawable.start();
-            } else if (ScrollStatus.isIdle(tempStatus)) {
+                if (isLoadAble()) {
+                    loadListener.onLoad();
+                }
+            } else if (ScrollStatus.isIdle(scrollStatus)) {
                 mRefreshDrawable.stop();
                 mLoadDrawable.stop();
+                Log.i("dragRefresh", "startTop:" + startTop);
+                if (smoothToDirection == Direction.UP && isRefreshAble() && startTop != contentTop) {
+                    Log.i("dragRefresh", "contentTop:" + contentTop);
+                    refreshListener.refreshCancel();
+                }
+                if (smoothToDirection == Direction.DOWN && isLoadAble() && startTop != contentTop) {
+                    loadListener.loadCancel();
+                }
             }
-            status = tempStatus;
+            status = scrollStatus;
             lastAnimState = animContinue;
+            smoothToDirection = Direction.STATIC;
+            endMove();
         }
     }
 
@@ -292,32 +335,46 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
                 lastAnimState = true;
                 if (dragHelper.smoothSlideViewTo(mTarget, 0, dp2px(DRAG_MAX_DISTANCE))) {
                     ViewCompat.postInvalidateOnAnimation(this);
+                    scrollStatus = ScrollStatus.REFRESHING;
+                } else {
+                    status = ScrollStatus.REFRESHING;
+                    scrollStatus = status;
+                    if (isRefreshAble()) {
+                        refreshListener.onRefresh();
+                    }
                 }
             } else {
                 lastAnimState = true;
                 if (dragHelper.smoothSlideViewTo(mTarget, 0, 0)) {
                     ViewCompat.postInvalidateOnAnimation(this);
+                    beforeMove();
+                    scrollStatus = ScrollStatus.IDLE;
+                    smoothToDirection = Direction.UP;
+                } else {
+                    if (ScrollStatus.isRefreshing(scrollStatus) && isRefreshAble()) {
+                        refreshListener.refreshCancel();
+                    }
+                    status = ScrollStatus.IDLE;
+                    scrollStatus = status;
                 }
-            }
-            if (refreshing) {
-                tempStatus = ScrollStatus.REFRESHING;
-            } else {
-                tempStatus = ScrollStatus.IDLE;
             }
         } else {
             if (refreshing) {
                 contentTop = dp2px(DRAG_MAX_DISTANCE);
                 layoutViews();
+                status = ScrollStatus.REFRESHING;
+                if (isRefreshAble()) {
+                    refreshListener.onRefresh();
+                }
             } else {
                 contentTop = 0;
                 layoutViews();
-            }
-            if (refreshing) {
-                status = ScrollStatus.REFRESHING;
-            } else {
+                if (!ScrollStatus.isIdle(status) && isRefreshAble()) {
+                    refreshListener.refreshCancel();
+                }
                 status = ScrollStatus.IDLE;
             }
-            tempStatus = status;
+            scrollStatus = status;
         }
     }
 
@@ -331,32 +388,55 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
                 lastAnimState = true;
                 if (dragHelper.smoothSlideViewTo(mTarget, 0, -dp2px(DRAG_MAX_DISTANCE))) {
                     ViewCompat.postInvalidateOnAnimation(this);
+                    scrollStatus = ScrollStatus.LOADING;
+                } else {
+                    status = ScrollStatus.LOADING;
+                    scrollStatus = status;
+                    if (isLoadAble()) {
+                        loadListener.onLoad();
+                    }
                 }
             } else {
                 lastAnimState = true;
                 if (dragHelper.smoothSlideViewTo(mTarget, 0, 0)) {
                     ViewCompat.postInvalidateOnAnimation(this);
+                    beforeMove();
+                    scrollStatus = ScrollStatus.IDLE;
+                    smoothToDirection = Direction.DOWN;
+                } else {
+                    if (ScrollStatus.isLoading(scrollStatus) && isLoadAble()) {
+                        loadListener.loadCancel();
+                    }
+                    status = ScrollStatus.IDLE;
+                    scrollStatus = status;
                 }
             }
-            if (loading) {
-                tempStatus = ScrollStatus.LOADING;
-            } else {
-                tempStatus = ScrollStatus.IDLE;
-            }
+
         } else {
             if (loading) {
                 contentTop = -dp2px(DRAG_MAX_DISTANCE);
                 layoutViews();
+                status = ScrollStatus.LOADING;
+                if (isLoadAble()) {
+                    loadListener.onLoad();
+                }
             } else {
                 contentTop = 0;
                 layoutViews();
-            }
-            if (loading) {
-                status = ScrollStatus.LOADING;
-            } else {
+                if (!ScrollStatus.isIdle(status) && isLoadAble()) {
+                    loadListener.loadCancel();
+                }
                 status = ScrollStatus.IDLE;
             }
-            tempStatus = status;
+            scrollStatus = status;
         }
+    }
+
+    public void setRefreshListener(DragRefreshListener refreshListener) {
+        this.refreshListener = refreshListener;
+    }
+
+    public void setLoadListener(DragLoadListener loadListener) {
+        this.loadListener = loadListener;
     }
 }

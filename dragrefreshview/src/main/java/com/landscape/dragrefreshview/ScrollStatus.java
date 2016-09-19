@@ -4,10 +4,21 @@ package com.landscape.dragrefreshview;
  * Created by 1 on 2016/9/9.
  */
 public enum  ScrollStatus {
-    IDLE,
-    DRAGGING,
-    REFRESHING,
-    LOADING;
+    IDLE("IDLE"),
+    DRAGGING("DRAGGING"),
+    REFRESHING("REFRESHING"),
+    LOADING("LOADING");
+
+    private String value;
+
+    ScrollStatus(String value) {
+        this.value = value;
+    }
+
+    @Override
+    public String toString() {
+        return value;
+    }
 
     public static boolean isRefreshing(ScrollStatus status) {
         return status == REFRESHING;
