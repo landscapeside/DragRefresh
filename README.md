@@ -1,5 +1,17 @@
 # DragRefresh
 
+* 引入
+```gradle
+dependencies {
+    compile 'com.github.landscapeside:DragRefresh:0.1'
+}
+
+repositories {
+        jcenter()
+        maven { url "https://jitpack.io" }
+    }
+```
+
 * 使用
 
 ```xml
