@@ -26,13 +26,13 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
     ImageView refreshView, loadView;
     private int emptyId = 0, contentId = 0;
     private RingDrawable mRefreshDrawable, mLoadDrawable;
-    int contentTop = 0,startTop = 0;
+    int contentTop = 0;
     ScrollStatus status = ScrollStatus.IDLE, scrollStatus = ScrollStatus.IDLE;
     DragDelegate dragDelegate = null;
     DragRefreshListener refreshListener = null;
     DragLoadListener loadListener = null;
     Direction smoothToDirection = Direction.STATIC;
-    boolean isMoving = false;
+    boolean shouldCancel = false;
 
     public DragRefreshLayout(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -112,17 +112,7 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
 
     @Override
     public void beforeMove() {
-        if (isMoving) {
-            return;
-        }
-        scrollStatus = status;
-        startTop = contentTop;
-        isMoving = true;
-        Log.i("dragRefresh", "startTop:" + startTop);
-    }
-
-    private void endMove() {
-        isMoving = false;
+        shouldCancel = ScrollStatus.isRefreshing(status) || ScrollStatus.isLoading(status);
     }
 
     @Override
@@ -238,13 +228,14 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
         public void onViewReleased(View releasedChild, float xvel, float yvel) {
             super.onViewReleased(releasedChild, xvel, yvel);
             if (contentTop > dp2px(DRAG_MAX_DISTANCE)) {
+                shouldCancel = false;
                 setRefreshing(true);
             } else if (contentTop < -dp2px(DRAG_MAX_DISTANCE)) {
+                shouldCancel = false;
                 setLoading(true);
             } else if (contentTop > 0) {
                 setRefreshing(false);
             }else if(contentTop == 0){
-                endMove();
                 if (!ScrollViewCompat.canScrollDown(mTarget)) {
                     setRefreshing(false);
                 } else if (!ScrollViewCompat.canScrollUp(mTarget)){
@@ -309,19 +300,17 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
             } else if (ScrollStatus.isIdle(scrollStatus)) {
                 mRefreshDrawable.stop();
                 mLoadDrawable.stop();
-                Log.i("dragRefresh", "startTop:" + startTop);
-                if (smoothToDirection == Direction.UP && isRefreshAble() && startTop != contentTop) {
-                    Log.i("dragRefresh", "contentTop:" + contentTop);
+                if (smoothToDirection == Direction.UP && isRefreshAble() && shouldCancel) {
                     refreshListener.refreshCancel();
                 }
-                if (smoothToDirection == Direction.DOWN && isLoadAble() && startTop != contentTop) {
+                if (smoothToDirection == Direction.DOWN && isLoadAble() && shouldCancel) {
                     loadListener.loadCancel();
                 }
+                shouldCancel = false;
             }
             status = scrollStatus;
             lastAnimState = animContinue;
             smoothToDirection = Direction.STATIC;
-            endMove();
         }
     }
 
@@ -347,7 +336,6 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
                 lastAnimState = true;
                 if (dragHelper.smoothSlideViewTo(mTarget, 0, 0)) {
                     ViewCompat.postInvalidateOnAnimation(this);
-                    beforeMove();
                     scrollStatus = ScrollStatus.IDLE;
                     smoothToDirection = Direction.UP;
                 } else {
@@ -400,7 +388,6 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
                 lastAnimState = true;
                 if (dragHelper.smoothSlideViewTo(mTarget, 0, 0)) {
                     ViewCompat.postInvalidateOnAnimation(this);
-                    beforeMove();
                     scrollStatus = ScrollStatus.IDLE;
                     smoothToDirection = Direction.DOWN;
                 } else {
