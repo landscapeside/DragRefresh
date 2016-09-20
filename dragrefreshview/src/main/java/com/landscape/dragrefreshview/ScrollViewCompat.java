@@ -13,7 +13,7 @@ import android.widget.AbsListView;
 public class ScrollViewCompat {
 
     /**
-     * 该视图控件还能否向下滑动
+     * 该视图控件还能否向下拉动
      *
      * @param mTarget
      * @return true-未到顶部，false-到顶部
@@ -43,7 +43,7 @@ public class ScrollViewCompat {
     }
 
     /**
-     * 该视图控件还能否向上滑动
+     * 该视图控件还能否向上拉动
      *
      * @param mTarget
      * @return true-未到底部，false-到底部
