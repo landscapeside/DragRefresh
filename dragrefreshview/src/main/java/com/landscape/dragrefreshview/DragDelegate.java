@@ -47,7 +47,7 @@ public class DragDelegate {
                         (int) (MotionEventUtil.getMotionEventY(event, mActivePointerId) - initY));
                 if (direction == Direction.DOWN) {
                     if (consignor.isRefreshAble() || ScrollStatus.isLoading(consignor.scrollStatus())) {
-                        if (!ScrollStatus.isDragging(consignor.scrollStatus()) && !ScrollStatus.isRefreshing(consignor.scrollStatus()) && ScrollViewCompat.canScrollDown(consignor.target())) {
+                        if (!ScrollStatus.isDragging(consignor.scrollStatus()) && !ScrollStatus.isRefreshing(consignor.scrollStatus()) && ScrollViewCompat.canSmoothDown(consignor.target())) {
                             if (ScrollStatus.isLoading(consignor.scrollStatus())) {
                                 return handleMotionEvent(event);
                             } else {
@@ -61,14 +61,14 @@ public class DragDelegate {
                     }
                 } else if (direction == Direction.UP) {
                     if (consignor.isLoadAble() || ScrollStatus.isRefreshing(consignor.scrollStatus())) {
-                        if (!ScrollStatus.isDragging(consignor.scrollStatus()) && !ScrollStatus.isLoading(consignor.scrollStatus()) && ScrollViewCompat.canScrollUp(consignor.target())) {
+                        if (!ScrollStatus.isDragging(consignor.scrollStatus()) && !ScrollStatus.isLoading(consignor.scrollStatus()) && ScrollViewCompat.canSmoothUp(consignor.target())) {
                             if (ScrollStatus.isRefreshing(consignor.scrollStatus())) {
                                 return handleMotionEvent(event);
                             } else {
                                 return false;
                             }
                         } else {
-                            if (ScrollViewCompat.canScrollDown(consignor.target()) || ScrollStatus.isRefreshing(consignor.scrollStatus())) {
+                            if (ScrollViewCompat.canSmoothDown(consignor.target()) || ScrollStatus.isRefreshing(consignor.scrollStatus())) {
                                 return handleMotionEvent(event);
                             }
                         }

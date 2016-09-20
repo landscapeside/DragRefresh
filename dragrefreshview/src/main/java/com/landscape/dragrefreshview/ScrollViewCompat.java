@@ -13,12 +13,12 @@ import android.widget.AbsListView;
 public class ScrollViewCompat {
 
     /**
-     * 该视图控件还能否向下滚动
+     * 该视图控件还能否向下滑动
      *
      * @param mTarget
      * @return true-未到顶部，false-到顶部
      */
-    public static boolean canScrollDown(View mTarget) {
+    public static boolean canSmoothDown(View mTarget) {
         if (android.os.Build.VERSION.SDK_INT < 14) {
             if (mTarget instanceof AbsListView) {
                 final AbsListView absListView = (AbsListView) mTarget;
@@ -43,12 +43,12 @@ public class ScrollViewCompat {
     }
 
     /**
-     * 该视图控件还能否向上滚动
+     * 该视图控件还能否向上滑动
      *
      * @param mTarget
      * @return true-未到底部，false-到底部
      */
-    public static boolean canScrollUp(View mTarget) {
+    public static boolean canSmoothUp(View mTarget) {
         if (android.os.Build.VERSION.SDK_INT < 14) {
             if (mTarget instanceof AbsListView) {
                 final AbsListView absListView = (AbsListView) mTarget;

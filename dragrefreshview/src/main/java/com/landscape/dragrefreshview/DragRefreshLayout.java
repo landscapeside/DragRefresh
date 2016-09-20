@@ -6,7 +6,6 @@ import android.graphics.Color;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.widget.ViewDragHelper;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
@@ -252,9 +251,9 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
             } else if (contentTop > 0) {
                 setRefreshing(false);
             } else if (contentTop == 0) {
-                if (!ScrollViewCompat.canScrollDown(mTarget)) {
+                if (!ScrollViewCompat.canSmoothDown(mTarget)) {
                     setRefreshing(false);
-                } else if (!ScrollViewCompat.canScrollUp(mTarget)) {
+                } else if (!ScrollViewCompat.canSmoothUp(mTarget)) {
                     setLoading(false);
                 }
             } else {
@@ -265,12 +264,12 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
         @Override
         public void onViewPositionChanged(View changedView, int left, int top, int dx, int dy) {
             if (changedView == mTarget) {
-                if (!ScrollViewCompat.canScrollDown(mTarget)
+                if (!ScrollViewCompat.canSmoothDown(mTarget)
                         && top < 0) {
                     contentTop = 0;
                     layoutViews();
-                } else if (ScrollViewCompat.canScrollDown(mTarget)
-                        && !ScrollViewCompat.canScrollUp(mTarget)
+                } else if (ScrollViewCompat.canSmoothDown(mTarget)
+                        && !ScrollViewCompat.canSmoothUp(mTarget)
                         && top > 0) {
                     contentTop = 0;
                     layoutViews();
@@ -287,12 +286,12 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
                 contentTop = top;
                 invalidate();
             } else {
-                if (!ScrollViewCompat.canScrollDown(mTarget)
+                if (!ScrollViewCompat.canSmoothDown(mTarget)
                         && (top + refreshView.getMeasuredHeight() - getPaddingTop()) < 0) {
                     contentTop = 0;
                     layoutViews();
-                } else if (ScrollViewCompat.canScrollDown(mTarget)
-                        && !ScrollViewCompat.canScrollUp(mTarget)
+                } else if (ScrollViewCompat.canSmoothDown(mTarget)
+                        && !ScrollViewCompat.canSmoothUp(mTarget)
                         && (top - getMeasuredHeight() + getPaddingBottom()) > 0) {
                     contentTop = 0;
                     layoutViews();
