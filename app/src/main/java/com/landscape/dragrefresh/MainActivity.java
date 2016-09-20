@@ -50,12 +50,12 @@ public class MainActivity extends AppCompatActivity {
         dragRefresh.setRefreshListener(new DragRefreshListener() {
             @Override
             public void onRefresh() {
-                listView.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        dragRefresh.setRefreshing(false);
-                    }
-                }, 3000);
+//                listView.postDelayed(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        dragRefresh.setRefreshing(false);
+//                    }
+//                }, 3000);
             }
 
             @Override
@@ -66,12 +66,12 @@ public class MainActivity extends AppCompatActivity {
         dragRefresh.setLoadListener(new DragLoadListener() {
             @Override
             public void onLoad() {
-                listView.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        dragRefresh.setLoading(false);
-                    }
-                }, 3000);
+//                listView.postDelayed(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        dragRefresh.setLoading(false);
+//                    }
+//                }, 3000);
             }
 
             @Override

@@ -13,6 +13,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+
 import static com.landscape.dragrefreshview.Range.DRAG_MAX_DISTANCE;
 import static com.landscape.dragrefreshview.Range.DRAG_MAX_RANGE;
 import static com.landscape.dragrefreshview.Range.DRAW_PADDING;
@@ -127,8 +128,8 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
         loadView = new ImageView(getContext());
         refreshView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp2px(DRAG_MAX_DISTANCE)));
         loadView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp2px(DRAG_MAX_DISTANCE)));
-        refreshView.setPadding(0,dp2px(DRAW_PADDING),0,dp2px(DRAW_PADDING));
-        loadView.setPadding(0,dp2px(DRAW_PADDING),0,dp2px(DRAW_PADDING));
+        refreshView.setPadding(0, dp2px(DRAW_PADDING), 0, dp2px(DRAW_PADDING));
+        loadView.setPadding(0, dp2px(DRAW_PADDING), 0, dp2px(DRAW_PADDING));
 
         initDrawable();
         refreshView.setImageDrawable(mRefreshDrawable);
@@ -136,7 +137,7 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
         refreshView.setBackgroundColor(Color.BLUE);
         loadView.setBackgroundColor(Color.BLACK);
 
-        addView(refreshView, 0);
+        addView(refreshView);
         addView(loadView);
     }
 
@@ -163,6 +164,7 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
         }
         if (emptyId != 0) {
             emptyView = findViewById(emptyId);
+            emptyView.setClickable(true);
         }
     }
 
@@ -186,7 +188,7 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
             mTarget.layout(paddingLeft, paddingTop + contentTop, width - paddingRight, contentTop + height - paddingBottom);
         }
         if (emptyView != null) {
-            emptyView.layout(paddingLeft, paddingTop , width - paddingRight, height - paddingBottom);
+            emptyView.layout(paddingLeft, paddingTop, width - paddingRight, height - paddingBottom);
         }
         refreshView.layout(
                 paddingLeft,
@@ -204,18 +206,32 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
 
         @Override
         public boolean tryCaptureView(View child, int pointerId) {
-            return true;
+            return child == mTarget
+                    || (child == emptyView && emptyView.isShown())
+                    || child == refreshView
+                    || child == loadView;
         }
 
         @Override
         public int clampViewPositionVertical(View child, int top, int dy) {
-            status = ScrollStatus.DRAGGING;
-            if (contentTop + dy > DRAG_MAX_RANGE) {
-                return DRAG_MAX_RANGE;
-            } else if (contentTop + dy < -DRAG_MAX_RANGE) {
-                return -DRAG_MAX_RANGE;
+            if (child == mTarget || (child == emptyView && emptyView.isShown())) {
+                status = ScrollStatus.DRAGGING;
+                if (contentTop + dy > DRAG_MAX_RANGE) {
+                    return DRAG_MAX_RANGE;
+                } else if (contentTop + dy < -DRAG_MAX_RANGE) {
+                    return -DRAG_MAX_RANGE;
+                } else {
+                    return top;
+                }
             } else {
-                return top;
+                status = ScrollStatus.DRAGGING;
+                if (contentTop + dy > DRAG_MAX_RANGE) {
+                    return DRAG_MAX_RANGE - refreshView.getMeasuredHeight();
+                } else if (contentTop + dy < -DRAG_MAX_RANGE) {
+                    return getMeasuredHeight() - getPaddingBottom() - DRAG_MAX_RANGE;
+                } else {
+                    return top;
+                }
             }
         }
 
@@ -235,10 +251,10 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
                 setLoading(true);
             } else if (contentTop > 0) {
                 setRefreshing(false);
-            }else if(contentTop == 0){
+            } else if (contentTop == 0) {
                 if (!ScrollViewCompat.canScrollDown(mTarget)) {
                     setRefreshing(false);
-                } else if (!ScrollViewCompat.canScrollUp(mTarget)){
+                } else if (!ScrollViewCompat.canScrollUp(mTarget)) {
                     setLoading(false);
                 }
             } else {
@@ -262,13 +278,29 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
                     refreshView.offsetTopAndBottom(dy);
                     loadView.offsetTopAndBottom(dy);
                     contentTop = top;
+                    layoutViews();
                     invalidate();
                 }
-            } else if (changedView == emptyView) {
+            } else if (changedView == emptyView && emptyView.isShown()) {
                 refreshView.offsetTopAndBottom(dy);
                 loadView.offsetTopAndBottom(dy);
                 contentTop = top;
                 invalidate();
+            } else {
+                if (!ScrollViewCompat.canScrollDown(mTarget)
+                        && (top + refreshView.getMeasuredHeight() - getPaddingTop()) < 0) {
+                    contentTop = 0;
+                    layoutViews();
+                } else if (ScrollViewCompat.canScrollDown(mTarget)
+                        && !ScrollViewCompat.canScrollUp(mTarget)
+                        && (top - getMeasuredHeight() + getPaddingBottom()) > 0) {
+                    contentTop = 0;
+                    layoutViews();
+                } else {
+                    contentTop += dy;
+                    layoutViews();
+                    invalidate();
+                }
             }
         }
     };
@@ -277,7 +309,7 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
         return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, getContext().getResources().getDisplayMetrics());
     }
 
-    boolean lastAnimState = true,animContinue = true;
+    boolean lastAnimState = true, animContinue = true;
 
     @Override
     public void computeScroll() {
@@ -286,7 +318,7 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
             ViewCompat.postInvalidateOnAnimation(this);
             mRefreshDrawable.invalidateSelf();
             mLoadDrawable.invalidateSelf();
-        } else if (!animContinue && lastAnimState != animContinue){
+        } else if (!animContinue && lastAnimState != animContinue) {
             if (ScrollStatus.isRefreshing(scrollStatus)) {
                 mRefreshDrawable.start();
                 if (isRefreshAble()) {
