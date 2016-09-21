@@ -3,7 +3,7 @@
 * 引入
 ```gradle
 dependencies {
-    compile 'com.github.landscapeside:DragRefresh:0.1'
+    compile 'com.github.landscapeside:DragRefresh:0.2'
 }
 
 repositories {
