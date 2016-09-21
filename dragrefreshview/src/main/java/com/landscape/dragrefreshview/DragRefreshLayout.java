@@ -133,8 +133,6 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
         initDrawable();
         refreshView.setImageDrawable(mRefreshDrawable);
         loadView.setImageDrawable(mLoadDrawable);
-        refreshView.setBackgroundColor(Color.BLUE);
-        loadView.setBackgroundColor(Color.BLACK);
 
         addView(refreshView);
         addView(loadView);
