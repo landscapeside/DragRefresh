@@ -22,7 +22,7 @@ public class DragDelegate {
     private float mDragPercent;
 
     public DragDelegate(DragActionBridge consignor) {
-        gestureDetector = new GestureDetectorCompat(((ViewGroup) consignor).getContext(), new XScrollDetector());
+        gestureDetector = new GestureDetectorCompat(((ViewGroup) consignor).getContext(), new YScrollDetector());
         connect(consignor);
     }
 
@@ -127,7 +127,7 @@ public class DragDelegate {
         return consignor.dragHelper().shouldInterceptTouchEvent(event) && gestureDetector.onTouchEvent(event);
     }
 
-    class XScrollDetector extends GestureDetector.SimpleOnGestureListener {
+    class YScrollDetector extends GestureDetector.SimpleOnGestureListener {
         @Override
         public boolean onScroll(MotionEvent e1, MotionEvent e2, float dx, float dy) {
             return Math.abs(dx) <= Math.abs(dy);

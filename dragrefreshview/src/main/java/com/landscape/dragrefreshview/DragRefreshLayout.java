@@ -2,10 +2,10 @@ package com.landscape.dragrefreshview;
 
 import android.content.Context;
 import android.content.res.TypedArray;
-import android.graphics.Color;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.widget.ViewDragHelper;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
@@ -13,7 +13,7 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
-import static com.landscape.dragrefreshview.Range.DRAG_MAX_DISTANCE;
+import static com.landscape.dragrefreshview.Range.DRAW_VIEW_MAX_HEIGHT;
 import static com.landscape.dragrefreshview.Range.DRAG_MAX_RANGE;
 import static com.landscape.dragrefreshview.Range.DRAW_PADDING;
 
@@ -125,8 +125,8 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
     private void addRefreshViews() {
         refreshView = new ImageView(getContext());
         loadView = new ImageView(getContext());
-        refreshView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp2px(DRAG_MAX_DISTANCE)));
-        loadView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp2px(DRAG_MAX_DISTANCE)));
+        refreshView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp2px(DRAW_VIEW_MAX_HEIGHT)));
+        loadView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp2px(DRAW_VIEW_MAX_HEIGHT)));
         refreshView.setPadding(0, dp2px(DRAW_PADDING), 0, dp2px(DRAW_PADDING));
         loadView.setPadding(0, dp2px(DRAW_PADDING), 0, dp2px(DRAW_PADDING));
 
@@ -240,10 +240,10 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
         @Override
         public void onViewReleased(View releasedChild, float xvel, float yvel) {
             super.onViewReleased(releasedChild, xvel, yvel);
-            if (contentTop > dp2px(DRAG_MAX_DISTANCE)) {
+            if (contentTop > dp2px(DRAW_VIEW_MAX_HEIGHT)) {
                 shouldCancel = false;
                 setRefreshing(true);
-            } else if (contentTop < -dp2px(DRAG_MAX_DISTANCE)) {
+            } else if (contentTop < -dp2px(DRAW_VIEW_MAX_HEIGHT)) {
                 shouldCancel = false;
                 setLoading(true);
             } else if (contentTop > 0) {
@@ -351,7 +351,7 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
         if (animation) {
             if (refreshing) {
                 lastAnimState = true;
-                if (dragHelper.smoothSlideViewTo(mTarget, 0, dp2px(DRAG_MAX_DISTANCE))) {
+                if (dragHelper.smoothSlideViewTo(mTarget, 0, dp2px(DRAW_VIEW_MAX_HEIGHT))) {
                     ViewCompat.postInvalidateOnAnimation(this);
                     scrollStatus = ScrollStatus.REFRESHING;
                 } else {
@@ -377,7 +377,7 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
             }
         } else {
             if (refreshing) {
-                contentTop = dp2px(DRAG_MAX_DISTANCE);
+                contentTop = dp2px(DRAW_VIEW_MAX_HEIGHT);
                 layoutViews();
                 status = ScrollStatus.REFRESHING;
                 if (isRefreshAble()) {
@@ -403,7 +403,7 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
         if (animation) {
             if (loading) {
                 lastAnimState = true;
-                if (dragHelper.smoothSlideViewTo(mTarget, 0, -dp2px(DRAG_MAX_DISTANCE))) {
+                if (dragHelper.smoothSlideViewTo(mTarget, 0, -dp2px(DRAW_VIEW_MAX_HEIGHT))) {
                     ViewCompat.postInvalidateOnAnimation(this);
                     scrollStatus = ScrollStatus.LOADING;
                 } else {
@@ -430,7 +430,7 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
 
         } else {
             if (loading) {
-                contentTop = -dp2px(DRAG_MAX_DISTANCE);
+                contentTop = -dp2px(DRAW_VIEW_MAX_HEIGHT);
                 layoutViews();
                 status = ScrollStatus.LOADING;
                 if (isLoadAble()) {
