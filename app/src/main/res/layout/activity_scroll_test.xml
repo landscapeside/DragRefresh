@@ -2,15 +2,16 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/activity_scroll_test"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.landscape.dragrefresh.MainActivity">
+    tools:context="com.landscape.dragrefresh.ScrollTestActivity">
 
     <com.landscape.dragrefreshview.DragRefreshLayout
         android:id="@+id/drag_refresh"
         android:layout_width="match_parent"
         android:layout_height="200dp"
-        app:refresh_content="@+id/list_view"
+        app:refresh_content="@+id/scroll_view"
         app:refresh_empty="@+id/empty_view">
 
         <TextView
@@ -21,12 +22,20 @@
             android:gravity="center"
             android:visibility="gone"/>
 
-        <ListView
-            android:id="@+id/list_view"
-            android:layout_width="wrap_content"
+        <ScrollView
+            android:id="@+id/scroll_view"
+            android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:visibility="visible" />
+            android:visibility="visible" >
+
+            <TextView
+                android:id="@+id/tv_content"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="adfasdfasdfasdfasdfsa"
+                android:background="@color/colorAccent"/>
+        </ScrollView>
 
     </com.landscape.dragrefreshview.DragRefreshLayout>
-
+    
 </RelativeLayout>

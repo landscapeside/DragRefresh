@@ -3,6 +3,7 @@ package com.landscape.dragrefreshview;
 import android.support.v4.view.GestureDetectorCompat;
 import android.support.v4.view.MotionEventCompat;
 import android.support.v4.widget.ViewDragHelper;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
@@ -124,6 +125,7 @@ public class DragDelegate {
             cancelEvent.setAction(MotionEvent.ACTION_CANCEL);
             consignor.target().dispatchTouchEvent(cancelEvent);
         }
+        Log.i("dragDelegate", "handleMotionEvent:"+consignor.dragHelper().shouldInterceptTouchEvent(event));
         return consignor.dragHelper().shouldInterceptTouchEvent(event) && gestureDetector.onTouchEvent(event);
     }
 
