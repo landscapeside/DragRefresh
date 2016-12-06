@@ -5,7 +5,6 @@ import android.content.res.TypedArray;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.widget.ViewDragHelper;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
@@ -36,7 +35,7 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
 
     public DragRefreshLayout(Context context, AttributeSet attrs) {
         super(context, attrs);
-        dragHelper = ViewDragHelper.create(this, 0.3f, dragHelperCallback);
+        dragHelper = ViewDragHelper.create(this, dragHelperCallback);
         dragDelegate = new DragDelegate(this);
 
         if (attrs == null) {

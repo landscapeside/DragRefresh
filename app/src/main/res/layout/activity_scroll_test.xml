@@ -25,14 +25,15 @@
         <ScrollView
             android:id="@+id/scroll_view"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:visibility="visible" >
+            android:layout_height="200dp"
+            android:visibility="visible"
+            android:background="@android:color/black">
 
             <TextView
                 android:id="@+id/tv_content"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:text="adfasdfasdfasdfasdfsa"
+                android:text="adfasdfasdfasdfasdfsa\nadfasdfasdfasdfasdfsa\nadfasdfasdfasdfasdfsa\nadfasdfasdfasdfasdfsa\nadfasdfasdfasdfasdfsa\nadfasdfasdfasdfasdfsa\nadfasdfasdfasdfasdfsa\nadfasdfasdfasdfasdfsa\nadfasdfasdfasdfasdfsa\nadfasdfasdfasdfasdfsa\nadfasdfasdfasdfasdfsa\nadfasdfasdfasdfasdfsa\nadfasdfasdfasdfasdfsa\nadfasdfasdfasdfasdfsa\nadfasdfasdfasdfasdfsa\nadfasdfasdfasdfasdfsa\nadfasdfasdfasdfasdfsa\nadfasdfasdfasdfasdfsa\nadfasdfasdfasdfasdfsa\nadfasdfasdfasdfasdfsa\n"
                 android:background="@color/colorAccent"/>
         </ScrollView>
 
