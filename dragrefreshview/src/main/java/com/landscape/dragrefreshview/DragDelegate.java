@@ -115,19 +115,19 @@ public class DragDelegate {
                 consignor.dragHelper().processTouchEvent(event);
                 break;
         }
-//        initY = (int) MotionEventUtil.getMotionEventY(event, mActivePointerId);
+        initY = (int) MotionEventUtil.getMotionEventY(event, mActivePointerId);
         return true;
     }
 
     private boolean handleMotionEvent(MotionEvent event) {
-        boolean shouldIntercept = consignor.dragHelper().shouldInterceptTouchEvent(event);
-        boolean intercept = gestureDetector.onTouchEvent(event) && shouldIntercept;
         if (!ScrollStatus.isDragging(consignor.scrollStatus())) {
             MotionEvent cancelEvent = MotionEvent.obtain(event);
-            cancelEvent.setAction(MotionEvent.ACTION_UP);
+            cancelEvent.setAction(MotionEvent.ACTION_CANCEL);
             consignor.target().dispatchTouchEvent(cancelEvent);
         }
-        return intercept;
+        boolean gestureDetectorMove = gestureDetector.onTouchEvent(event);
+        boolean dragHelperShouldIntercept = consignor.dragHelper().shouldInterceptTouchEvent(event);
+        return gestureDetectorMove && dragHelperShouldIntercept;
     }
 
     class YScrollDetector extends GestureDetector.SimpleOnGestureListener {

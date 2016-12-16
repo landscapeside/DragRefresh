@@ -260,6 +260,7 @@ public class DragRefreshLayout extends FrameLayout implements DragDelegate.DragA
 
         @Override
         public void onViewPositionChanged(View changedView, int left, int top, int dx, int dy) {
+            status = ScrollStatus.DRAGGING;
             if (changedView == mTarget) {
                 if (!ScrollViewCompat.canSmoothDown(mTarget)
                         && top < 0) {
