@@ -1,5 +1,7 @@
 # DragRefresh
 
+![示例图](showcase.gif)
+
 * 引入
 ```gradle
 dependencies {
