@@ -25,6 +25,6 @@ dependencies {
     compile 'com.android.support:appcompat-v7:23.4.0'
     compile 'com.jakewharton:butterknife:7.0.1'
     compile 'com.joanzapata.android:base-adapter-helper:1.1.11'
-//    compile 'com.github.landscapeside:DragRefresh:0.2'
-    compile project(':dragrefreshview')
+    compile 'com.github.landscapeside:DragRefresh:0.3'
+//    compile project(':dragrefreshview')
 }
