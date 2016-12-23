@@ -33,9 +33,15 @@ public class DragDelegate {
         }
         final int action = MotionEventCompat.getActionMasked(event);
         switch (action) {
+            case MotionEvent.ACTION_POINTER_DOWN:
+            case MotionEvent.ACTION_POINTER_UP:
+                gestureDetector.onTouchEvent(event);
+                consignor.dragHelper().shouldInterceptTouchEvent(event);
+                break;
             case MotionEvent.ACTION_DOWN:
                 mActivePointerId = MotionEventCompat.getPointerId(event, 0);
                 initY = (int) MotionEventUtil.getMotionEventY(event, mActivePointerId);
+                gestureDetector.onTouchEvent(event);
                 consignor.dragHelper().shouldInterceptTouchEvent(event);
                 mDragPercent = 0;
                 consignor.beforeMove();
@@ -101,7 +107,7 @@ public class DragDelegate {
                 if (mActivePointerId == -1) {
                     return true;
                 }
-                float originalDragPercent = (float) Math.abs(consignor.contentTop()) / (float)DRAG_MAX_RANGE + .4f;
+                float originalDragPercent = (float) Math.abs(consignor.contentTop()) / (float) DRAG_MAX_RANGE + .4f;
                 mDragPercent = Math.min(1f, Math.abs(originalDragPercent));
                 consignor.setDrawPercent(mDragPercent);
                 consignor.dragHelper().processTouchEvent(event);
@@ -142,14 +148,21 @@ public class DragDelegate {
         this.consignor = consignor;
     }
 
-    public interface DragActionBridge{
+    public interface DragActionBridge {
         ScrollStatus scrollStatus();
+
         int contentTop();
+
         ViewDragHelper dragHelper();
+
         View target();
+
         void setDrawPercent(float drawPercent);
+
         boolean isRefreshAble();
+
         boolean isLoadAble();
+
         void beforeMove();
     }
 }
